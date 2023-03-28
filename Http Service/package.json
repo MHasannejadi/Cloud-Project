@@ -1,0 +1,11 @@
+{
+  "name": "cloud_project",
+  "version": "1.0.0",
+  "description": "Http service of cloud project to upload, execute and get programming files",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mohammad Hassannejadi",
+  "license": "ISC"
+}
