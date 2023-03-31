@@ -2,6 +2,7 @@ const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const express = require("express");
 const multer = require("multer");
 const { s3, pool } = require("./config");
+const { sendIdToQueue } = require("./ampqClient");
 
 const app = express();
 const port = 3030;
@@ -11,7 +12,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Define API endpoint to receive file, language, input, and email from user
-app.post("/add", upload.single("file"), async (req, res) => {
+app.post("/api/add", upload.single("file"), async (req, res) => {
   try {
     const file = req.file?.buffer;
     const language = req.body?.language;
@@ -24,18 +25,17 @@ app.post("/add", upload.single("file"), async (req, res) => {
       return;
     } else {
       // Insert data into Postgres database
-      const enable = 1; // default value for enable column
+      const enable = false;
       const query =
         "INSERT INTO uploads(email, inputs, language, enable) VALUES($1, $2, $3, $4) RETURNING id;";
       const values = [email, inputs, language, enable];
       const pgRes = await pool.query(query, values);
       const id = pgRes.rows[0].id;
-
       if (id) {
         // Save file to S3 bucket
         const s3Params = {
           Bucket: "mohasan-cc-project",
-          Key: id,
+          Key: String(id),
           Body: file,
           ACL: "private",
         };
@@ -53,7 +53,46 @@ app.post("/add", upload.single("file"), async (req, res) => {
 
 app.get("/api/execute/:id", (req, res) => {
   const id = req.params.id;
+  pool.query("SELECT * FROM uploads WHERE id = $1", [id], (err, res) => {
+    if (err) {
+      console.error(err);
+    } else {
+      const row = res.rows[0];
+      if (!row.enable) {
+        sendIdToQueue(row.id);
+      }
+    }
+  });
   res.send(`You requested ID: ${id}`);
+});
+
+app.get("/api/job/:user", (req, res) => {
+  const query = `SELECT r.id, r.output, r.status, r.execute_date
+               FROM uploads u
+               INNER JOIN jobs j ON u.id = j.upload
+               INNER JOIN results r ON j.id = r.job
+               WHERE u.email = $1`;
+
+  const user = req.params.user;
+  // execute the query with the user email as a parameter
+  pool.query(query, [user], (error, results) => {
+    if (error) throw error;
+    const s3Params = {
+      Bucket: "cc-project",
+      Key: String(results.rows[0].id),
+    };
+    s3.getObject(s3Params, function (err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log(data.Body.toString());
+      }
+    });
+    // print the results to the console
+    console.log(results.rows);
+  });
+
+  res.send("You requested jobs");
 });
 
 // Start the server

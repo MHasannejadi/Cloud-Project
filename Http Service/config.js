@@ -23,11 +23,11 @@ const pool = new Pool({
 });
 
 // Set up RabbitMQ connection
-const ampqUrl =
+const amqpUrl =
   "amqps://edafwaiw:nTSF2E9L5Pdl4SJGkAtgM-r7pLznYvWm@hummingbird.rmq.cloudamqp.com/edafwaiw";
 
 module.exports = {
   s3,
   pool,
-  ampqUrl,
+  amqpUrl,
 };
