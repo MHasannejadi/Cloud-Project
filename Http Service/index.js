@@ -2,7 +2,11 @@ const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const express = require("express");
 const multer = require("multer");
 const { s3, pool } = require("./config");
-const { sendIdToQueue } = require("./ampqClient");
+const { sendIdToQueue } = require("./amqp");
+// const { S3RequestPresigner } = require("@aws-sdk/s3-request-presigner");
+// const { GetObjectCommand } = require("@aws-sdk/client-s3");
+// const { createRequest } = require("@aws-sdk/util-create-request");
+// const { formatUrl } = require("@aws-sdk/util-format-url");
 
 const app = express();
 const port = 3030;
@@ -81,13 +85,15 @@ app.get("/api/job/:user", (req, res) => {
       Bucket: "cc-project",
       Key: String(results.rows[0].id),
     };
-    s3.getObject(s3Params, function (err, data) {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log(data.Body.toString());
-      }
-    });
+    // const signedRequest = new S3RequestPresigner(s3.config);
+    // const request = createRequest(s3, new GetObjectCommand(s3Params));
+    // // Create and format presigned URL
+    // const signedUrl = formatUrl(
+    //   signedRequest.presign(request, {
+    //     // Supply expiration in second
+    //     expiresIn: 60 * 60 * 24,
+    //   })
+    // );
     // print the results to the console
     console.log(results.rows);
   });

@@ -13,7 +13,7 @@ async function sendIdToQueue(id) {
 
     // Send the ID to the queue
     const message = Buffer.from(String(id));
-    await channel.sendToQueue(queueName, message, { persistent: true });
+    channel.sendToQueue(queueName, message, { persistent: true });
 
     // Close the connection
     await channel.close();
