@@ -4,12 +4,11 @@ const fs = require("fs");
 const createChannel = require("./amqp");
 const s3 = require("./s3");
 const pool = require("./db");
-const { stringifySafe } = require("./utils");
 
 // Function to handle incoming messages
 async function handleMessage(message) {
   const id = message.content.toString();
-  console.log("ID " + id + " received from queue");
+  console.log("Received id from queue: " + id);
   fs.access(__dirname + "/cache/" + id, function (err) {
     if (err) {
       // Retrieve file from S3 bucket
@@ -24,32 +23,30 @@ async function handleMessage(message) {
     fs.readFile(__dirname + "/cache/" + id, "utf8", (err, data) => {
       if (err) throw err;
       const fileData = data;
-      console.log(fileData);
+      pool.query(
+        `SELECT inputs, language FROM uploads WHERE id = $1`,
+        [id],
+        (err, res) => {
+          if (err) {
+            console.error(err);
+          } else {
+            const { language, inputs } = res.rows[0];
+            const queryString = qs.stringify({
+              code: fileData,
+              language,
+              input: inputs,
+            });
+            const dbQuery = `INSERT INTO jobs (upload_id, job, status) VALUES ('${id}', '${queryString}', 'none')`;
+            pool.query(dbQuery);
+            console.log(
+              "File content has been successfully stored in the database"
+            );
+          }
+        }
+      );
     });
   });
 
-  // pool.query(
-  //   `SELECT inputs, language FROM uploads WHERE id = $1`,
-  //   [id],
-  //   (err, res) => {
-  //     if (err) {
-  //       console.error(err);
-  //     } else {
-  //       const { language, inputs } = res.rows[0];
-  //       const queryString = qs.stringify({
-  //         code: fileContent,
-  //         language,
-  //         inputs,
-  //       });
-  //       const dbQuery = `INSERT INTO jobs (upload_id, job, status) VALUES ('${id}', '${queryString}', 'none')`;
-  //       pool.query(dbQuery);
-  //       // console.log(dbQuery);
-  //       console.log(
-  //         "File content has been successfully stored in the database"
-  //       );
-  //     }
-  //   }
-  // );
 }
 
 async function startConsuming() {

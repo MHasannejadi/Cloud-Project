@@ -3,10 +3,10 @@ const express = require("express");
 const multer = require("multer");
 const { s3, pool } = require("./config");
 const { sendIdToQueue } = require("./amqp");
-// const { S3RequestPresigner } = require("@aws-sdk/s3-request-presigner");
-// const { GetObjectCommand } = require("@aws-sdk/client-s3");
-// const { createRequest } = require("@aws-sdk/util-create-request");
-// const { formatUrl } = require("@aws-sdk/util-format-url");
+const { S3RequestPresigner } = require("@aws-sdk/s3-request-presigner");
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
+const { createRequest } = require("@aws-sdk/util-create-request");
+const { formatUrl } = require("@aws-sdk/util-format-url");
 
 const app = express();
 const port = 3030;
@@ -26,7 +26,6 @@ app.post("/api/add", upload.single("file"), async (req, res) => {
     if (!file || !language || !inputs || !email) {
       res.send("All fields must be sent");
       res.end();
-      return;
     } else {
       // Insert data into Postgres database
       const enable = false;
@@ -67,6 +66,24 @@ app.get("/api/execute/:id", (req, res) => {
       }
     }
   });
+  pool.query(
+    "INSERT INTO results(job, output, status, execute_date) VALUES($1, $2, $3, $4)",
+    [id, null, "in progress", new Date()],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+    }
+  );
+  const signedRequest = new S3RequestPresigner(s3.config);
+  const request = createRequest(s3, new GetObjectCommand(s3Params));
+  const signedUrl = formatUrl(
+    signedRequest.presign(request, {
+      expiresIn: 60 * 60 * 24,
+    })
+  );
+
   res.send(`You requested ID: ${id}`);
 });
 
@@ -85,16 +102,6 @@ app.get("/api/job/:user", (req, res) => {
       Bucket: "cc-project",
       Key: String(results.rows[0].id),
     };
-    // const signedRequest = new S3RequestPresigner(s3.config);
-    // const request = createRequest(s3, new GetObjectCommand(s3Params));
-    // // Create and format presigned URL
-    // const signedUrl = formatUrl(
-    //   signedRequest.presign(request, {
-    //     // Supply expiration in second
-    //     expiresIn: 60 * 60 * 24,
-    //   })
-    // );
-    // print the results to the console
     console.log(results.rows);
   });
 
