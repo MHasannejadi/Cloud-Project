@@ -1,12 +1,8 @@
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const express = require("express");
 const multer = require("multer");
-const { s3, pool } = require("./config");
+const { s3, pool, arvanBucketEndpoint } = require("./config");
 const { sendIdToQueue } = require("./amqp");
-const { GetObjectCommand } = require('@aws-sdk/client-s3');
-const { S3RequestPresigner } = require('@aws-sdk/s3-request-presigner');
-const { createRequest } = require('@aws-sdk/util-create-request');
-const { formatUrl } = require('@aws-sdk/util-format-url');
 
 const app = express();
 const port = 3030;
@@ -54,8 +50,6 @@ app.post("/api/add", upload.single("file"), async (req, res) => {
   }
 });
 
-const signedRequest = new S3RequestPresigner(s3.config);
-
 app.get("/api/execute/:id", (req, res) => {
   const id = req.params.id;
   pool.query("SELECT * FROM uploads WHERE id = $1", [id], async (err, res) => {
@@ -65,27 +59,7 @@ app.get("/api/execute/:id", (req, res) => {
       const row = res.rows[0];
       if (!row.enable) {
         sendIdToQueue(id);
-        const s3Params = {
-          Bucket: "mohasan-cc-project",
-          Key: String(id),
-        };
-        try {
-          createRequest(s3, new GetObjectCommand(s3Params))
-            .then((res) => {
-              // console.log(res);
-              const signedUrl = formatUrl(
-                signedRequest.presign(res, {
-                  expiresIn: 60 * 60 * 24,
-                })
-              );
-              console.log(signedUrl);
-            })
-            .catch((err) => {
-              console.error(err);
-            });
-        } catch (error) {
-          console.error(error);
-        }
+        const downloadLink = arvanBucketEndpoint + "/" + id;
       }
     }
   });
