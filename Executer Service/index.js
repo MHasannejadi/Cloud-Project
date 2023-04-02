@@ -5,6 +5,7 @@ const codeXUrl = "https://api.codex.jaagrav.in";
 
 function codeRunner(data) {
   console.log(data);
+  const id = data.id;
   const config = {
     method: "post",
     url: codeXUrl,
@@ -16,36 +17,45 @@ function codeRunner(data) {
   axios(config)
     .then(function (response) {
       console.log(JSON.stringify(response.data));
-      pool.query(
-        "UPDATE results SET status = $1, output = $2 WHERE job = $3",
-        ["done", response.data, data.id],
-        (err, result) => {
-          if (err) {
-            console.error(err);
-            return;
-          }
-        }
-      );
-      // pool.query(
-      //   "UPDATE jobs SET status = $1, output = $2 WHERE job = $3",
-      //   ["done", response.data, data.id],
-      //   (err, result) => {
-      //     if (err) {
-      //       console.error(err);
-      //       return;
-      //     }
-      //   }
-      // );
-      // pool.query(
-      //   "UPDATE uploads SET enable = $1 WHERE id = $2",
-      //   [true, data.id],
-      //   (err, result) => {
-      //     if (err) {
-      //       console.error(err);
-      //       return;
-      //     }
-      //   }
-      // );
+      pool
+        .query("UPDATE results SET status = $1, output = $2 WHERE job = $3", [
+          "done",
+          response.data.output,
+          id,
+        ])
+        .then(() => {
+          console.log("Result has been successfully stored in the database");
+          pool
+            .query("UPDATE jobs SET status = $1 WHERE id = $2", [
+              "executed",
+              id,
+            ])
+            .then(() => {
+              console.log("Job has been successfully stored in the database");
+              pool.query(
+                "SELECT upload_id FROM jobs WHERE id = $1",
+                [id],
+                (err, result) => {
+                  if (err) {
+                    console.error(err);
+                    return;
+                  }
+                  pool.query(
+                    "UPDATE uploads SET status = $1 WHERE id = $2",
+                    ["done", result.rows[0].upload_id],
+                    (err, result) => {
+                      if (err) {
+                        console.error(err);
+                        return;
+                      } else {
+                        console.log("Upload status has been updated");
+                      }
+                    }
+                  );
+                }
+              );
+            });
+        });
     })
     .catch(function (error) {
       console.log(error);

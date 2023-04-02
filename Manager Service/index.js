@@ -36,17 +36,25 @@ async function handleMessage(message) {
               language,
               input: inputs,
             });
-            const dbQuery = `INSERT INTO jobs (upload_id, job, status) VALUES ('${id}', '${queryString}', 'none')`;
-            pool.query(dbQuery);
-            console.log(
-              "File content has been successfully stored in the database"
-            );
+            const date = new Date().toISOString();
+            pool
+              .query(
+                `INSERT INTO jobs (upload_id, job, status) VALUES ('${id}', '${queryString}', 'none')`
+              )
+              .then(() => {
+                console.log("Job has been successfully stored in the database");
+                pool.query(
+                  `INSERT INTO results (job, output, status, execute_date) VALUES ('${id}', '${null}', 'in progress', '${date}')`
+                );
+              })
+              .catch((err) => {
+                console.error(err);
+              });
           }
         }
       );
     });
   });
-
 }
 
 async function startConsuming() {
