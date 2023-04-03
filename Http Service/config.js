@@ -2,8 +2,7 @@ const { Pool } = require("pg");
 const { S3Client } = require("@aws-sdk/client-s3");
 
 const arvanEndpoint = "https://s3.ir-thr-at1.arvanstorage.ir";
-const arvanBucketEndpoint =
-  "https://mohasan-cc-project.s3.ir-thr-at1.arvanstorage.ir";
+const arvanBucket = "mohasan-cc-project";
 const s3 = new S3Client({
   region: "default",
   endpoint: arvanEndpoint,
@@ -27,8 +26,8 @@ const amqpUrl =
   "amqps://edafwaiw:nTSF2E9L5Pdl4SJGkAtgM-r7pLznYvWm@hummingbird.rmq.cloudamqp.com/edafwaiw";
 
 module.exports = {
-  arvanBucketEndpoint,
   s3,
   pool,
   amqpUrl,
+  arvanBucket
 };

@@ -1,8 +1,12 @@
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const express = require("express");
 const multer = require("multer");
-const { s3, pool, arvanBucketEndpoint } = require("./config");
+const { s3, pool, arvanBucketEndpoint, arvanBucket } = require("./config");
 const { sendIdToQueue } = require("./amqp");
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
+const { S3RequestPresigner } = require("@aws-sdk/s3-request-presigner");
+const { createRequest } = require("@aws-sdk/util-create-request");
+const { formatUrl } = require("@aws-sdk/util-format-url");
 
 const app = express();
 const port = 3030;
@@ -33,7 +37,7 @@ app.post("/api/add", upload.single("file"), async (req, res) => {
       if (id) {
         // Save file to S3 bucket
         const s3Params = {
-          Bucket: "mohasan-cc-project",
+          Bucket: arvanBucket,
           Key: String(id),
           Body: file,
           ACL: "private",
@@ -68,7 +72,7 @@ app.get("/api/execute/:id", (req, res) => {
 
 app.get("/api/results/:user", (req, res) => {
   const user = req.params.user;
-  const query = `SELECT r.id, r.output, r.status, r.execute_date, u.id
+  const query = `SELECT u.id, r.output, r.status, r.execute_date
                FROM uploads u
                INNER JOIN jobs j ON u.id = j.upload_id
                INNER JOIN results r ON j.id = r.job
@@ -76,15 +80,31 @@ app.get("/api/results/:user", (req, res) => {
   pool.query(query, [user], (error, results) => {
     if (error) throw error;
     const data = results.rows.map((row) => {
+      // const clientParams = {
+      //   Bucket: arvanBucket,
+      //   Key: row.id.toString(),
+      // };
+      // const request = createRequest(
+      //   s3,
+      //   new GetObjectCommand(clientParams)
+      // ).then((res) => {
+      //   console.log(res);
+      // });
+      // const signedRequest = new S3RequestPresigner(s3.config);
+      // const signedUrl = formatUrl(
+      //   signedRequest.presign(request, {
+      //     expiresIn: 60 * 60 * 24,
+      //   })
+      // );
       return {
-        id: row.id,
         output: row.output,
         status: row.status,
         execute_date: row.execute_date,
-        download_url: `${arvanBucketEndpoint}/${row.id}`,
+        download_url:
+          "https://mohasan-cc-project.s3.ir-thr-at1.arvanstorage.ir/" + row.id,
       };
     });
-    res.status(200).json(results.rows);
+    res.status(200).json(data);
   });
 });
 

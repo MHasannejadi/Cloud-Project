@@ -12,7 +12,7 @@ function codeRunner(data) {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    data: data,
+    data: data.job,
   };
   axios(config)
     .then(function (response) {
@@ -24,46 +24,47 @@ function codeRunner(data) {
           id,
         ])
         .then(() => {
-          console.log("Result has been successfully stored in the database");
-          pool
-            .query("UPDATE jobs SET status = $1 WHERE id = $2", [
-              "executed",
-              id,
-            ])
-            .then(() => {
-              console.log("Job has been successfully stored in the database");
-              pool.query(
-                "SELECT upload_id FROM jobs WHERE id = $1",
-                [id],
-                (err, result) => {
-                  if (err) {
-                    console.error(err);
-                    return;
-                  }
-                  pool.query(
-                    "UPDATE uploads SET status = $1 WHERE id = $2",
-                    ["done", result.rows[0].upload_id],
-                    (err, result) => {
-                      if (err) {
-                        console.error(err);
-                        return;
-                      } else {
-                        console.log("Upload status has been updated");
-                      }
-                    }
-                  );
-                }
-              );
-            });
+          console.log("Result has been successfully updated");
+          pool.query(
+            "UPDATE jobs SET status = $1 WHERE id = $2",
+            ["executed", id],
+            (err, res) => {}
+          );
         });
     })
     .catch(function (error) {
       console.log(error);
+      pool.query(
+        "SELECT upload_id FROM jobs WHERE id = $1",
+        [id],
+        (err, result) => {
+          console.log(result);
+          if (err) {
+            console.error(err);
+            return;
+          } else {
+            if (result.rowCount > 0) {
+              pool.query(
+                "UPDATE uploads SET enable = $1 WHERE id = $2",
+                [true, result.rows[0].upload_id],
+                (err, result) => {
+                  if (err) {
+                    console.error(err);
+                    return;
+                  } else {
+                    console.log("Upload has been enabled");
+                  }
+                }
+              );
+            }
+          }
+        }
+      );
     });
 }
 
 function main() {
-  setInterval(() => {
+  // setInterval(() => {
     pool.query(
       "SELECT * FROM jobs WHERE status = $1",
       ["none"],
@@ -73,15 +74,11 @@ function main() {
           return;
         }
         result.rows.forEach((row) => {
-          pool.query("UPDATE jobs SET status = $1 WHERE id = $2", [
-            "in progress",
-            row.id,
-          ]);
-          codeRunner(row.job);
+          codeRunner(row);
         });
       }
     );
-  }, 2000);
+  // }, 10000);
 }
 
 main();
