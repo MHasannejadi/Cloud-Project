@@ -59,7 +59,6 @@ app.get("/api/execute/:id", (req, res) => {
       const row = res.rows[0];
       if (!row.enable) {
         sendIdToQueue(id);
-        const downloadLink = arvanBucketEndpoint + "/" + id;
       }
     }
   });
@@ -67,25 +66,26 @@ app.get("/api/execute/:id", (req, res) => {
   res.send(`You requested ID: ${id}`);
 });
 
-app.get("/api/job/:user", (req, res) => {
-  const query = `SELECT r.id, r.output, r.status, r.execute_date
+app.get("/api/results/:user", (req, res) => {
+  const user = req.params.user;
+  const query = `SELECT r.id, r.output, r.status, r.execute_date, u.id
                FROM uploads u
-               INNER JOIN jobs j ON u.id = j.upload
+               INNER JOIN jobs j ON u.id = j.upload_id
                INNER JOIN results r ON j.id = r.job
                WHERE u.email = $1`;
-
-  const user = req.params.user;
-  // execute the query with the user email as a parameter
   pool.query(query, [user], (error, results) => {
     if (error) throw error;
-    const s3Params = {
-      Bucket: "cc-project",
-      Key: String(results.rows[0].id),
-    };
-    console.log(results.rows);
+    const data = results.rows.map((row) => {
+      return {
+        id: row.id,
+        output: row.output,
+        status: row.status,
+        execute_date: row.execute_date,
+        download_url: `${arvanBucketEndpoint}/${row.id}`,
+      };
+    });
+    res.status(200).json(results.rows);
   });
-
-  res.send("You requested jobs");
 });
 
 // Start the server
