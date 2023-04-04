@@ -4,7 +4,7 @@ const pool = require("./db");
 const codeXUrl = "https://api.codex.jaagrav.in";
 
 function codeRunner(data) {
-  console.log(data);
+  // console.log(data);
   const id = data.id;
   const config = {
     method: "post",
@@ -28,7 +28,14 @@ function codeRunner(data) {
           pool.query(
             "UPDATE jobs SET status = $1 WHERE id = $2",
             ["executed", id],
-            (err, res) => {}
+            (err, res) => {
+              if (err) {
+                console.error(err);
+                return;
+              } else {
+                console.log("Job has been successfully updated");
+              }
+            }
           );
         });
     })
@@ -64,7 +71,7 @@ function codeRunner(data) {
 }
 
 function main() {
-  // setInterval(() => {
+  setInterval(() => {
     pool.query(
       "SELECT * FROM jobs WHERE status = $1",
       ["none"],
@@ -78,7 +85,7 @@ function main() {
         });
       }
     );
-  // }, 10000);
+  }, 5000);
 }
 
 main();

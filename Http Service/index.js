@@ -45,7 +45,7 @@ app.post("/api/add", upload.single("file"), async (req, res) => {
         await s3.send(new PutObjectCommand(s3Params));
       }
 
-      res.send("Request received successfully");
+      res.send("Request received successfully. Your upload id: " + id);
       res.end();
     }
   } catch (err) {
