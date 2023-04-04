@@ -97,6 +97,7 @@ app.get("/api/results/:user", (req, res) => {
       //   })
       // );
       return {
+        upload_id: row.id,
         output: row.output,
         status: row.status,
         execute_date: row.execute_date,
