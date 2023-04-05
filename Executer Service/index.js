@@ -35,7 +35,7 @@ async function codeRunner(data) {
       }
     }
   );
-  const config = {
+  const codexConfig = {
     method: "post",
     url: codeXUrl,
     headers: {
@@ -43,10 +43,10 @@ async function codeRunner(data) {
     },
     data: data.job,
   };
-  axios(config)
+  axios(codexConfig)
     .then(function (response) {
       const resp = response.data;
-      console.log(resp);
+      // console.log(resp);
       if (resp.error === "") {
         const mailData = {
           from: fromText,
@@ -56,9 +56,7 @@ async function codeRunner(data) {
             "Your code has been executed successfully and the result is: " +
             resp.output,
         };
-        mailgunConfig.messages().send(mailData, function (error, body) {
-          // console.log(body);
-        });
+        mailgunConfig.messages().send(mailData);
         pool
           .query("UPDATE results SET status = $1, output = $2 WHERE job = $3", [
             "done",
@@ -93,9 +91,7 @@ async function codeRunner(data) {
             "Your code has been executed with error and the error is: " +
             resp.error,
         };
-        mailgunConfig.messages().send(mailData, function (error, body) {
-          console.log(body);
-        });
+        mailgunConfig.messages().send(mailData);
         if (uploadId) {
           pool.query(
             "UPDATE uploads SET enable = $1 WHERE id = $2",

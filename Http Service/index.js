@@ -44,8 +44,9 @@ app.post("/api/add", upload.single("file"), async (req, res) => {
         };
         await s3.send(new PutObjectCommand(s3Params));
       }
-
-      res.send("Request received successfully. Your upload id: " + id);
+      res
+        .status(200)
+        .send("Request received successfully. Your upload id: " + id);
       res.end();
     }
   } catch (err) {
@@ -66,8 +67,7 @@ app.get("/api/execute/:id", (req, res) => {
       }
     }
   });
-
-  res.send(`You requested ID: ${id}`);
+  res.status(200).send(`You requested successfully this id to execute: ${id}`);
 });
 
 app.get("/api/results/:user", (req, res) => {
@@ -101,8 +101,9 @@ app.get("/api/results/:user", (req, res) => {
         output: row.output,
         status: row.status,
         execute_date: row.execute_date,
-        download_url:
-          "https://mohasan-cc-project.s3.ir-thr-at1.arvanstorage.ir/" + row.id,
+        download_url: 
+        "https://mohasan-cc-project.s3.ir-thr-at1.arvanstorage.ir/" + row.id,
+        // signedUrl,
       };
     });
     res.status(200).json(data);
