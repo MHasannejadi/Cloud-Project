@@ -1,5 +1,5 @@
 const { GetObjectCommand } = require("@aws-sdk/client-s3");
-const qs = require("querystring");
+const qs = require("qs");
 const fs = require("fs");
 const createChannel = require("./amqp");
 const s3 = require("./s3");
