@@ -115,6 +115,14 @@ async function codeRunner(data) {
                         inProgressJobs.splice(index, 1);
                       }
                       console.log("Job has been successfully updated");
+                      pool
+                        .query(
+                          "UPDATE results SET status = $1, output = $2 WHERE job = $3",
+                          ["done", resp.output, jobId]
+                        )
+                        .then(() => {
+                          console.log("Result has been successfully updated");
+                        });
                     }
                   }
                 );
