@@ -1,7 +1,8 @@
 # Cloud-Project
 > Microservice project of cloud computing course that has 3 services and provides a code executer platform like Quera.
 > You can run every service separately with this commands in their folders: <br />
-> First `npm install` then `node index.js`. Note that you must have node.js installed on your system.
+> First `npm install` then `node index.js`. Note that you must have node.js installed on your system. <br />
+> Also you can see project initiation in file initiation.pdf
 ## Services:
 
 ### 1. HTTP Service:
