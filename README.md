@@ -1,11 +1,12 @@
 # Cloud-Project
 > Microservice project of cloud computing course that has 3 services and provides a code executer platform like Quera.
-
+> You can run every service separately with this commands in their folders: <br />
+> First `npm install` then `node index.js`. Note that you must have node.js installed on your system.
 ## Services:
 
 ### 1. HTTP Service:
-> That provides 3 API as follows:
-  * Get programming file with its details and user email from user and store file in S3 service and details in uploads table:
+> That provides 3 APIs as follows:
+  * Get the programming file with its details and user email from the user and store the file in S3 service and details in uploads table:
     * **URL**
     
       /api/add
@@ -33,7 +34,7 @@
  
         `id=[integer]`
         
-  * Get an email to return results of the user files:
+  * Get an email to return the results of the user files:
     * **URL**
     
       /api/results/:email
@@ -47,7 +48,7 @@
         `email=[string]`
         
 ### 2. Queue(Manager) Service:
-> Listening for every id come from amqp service and store file details and content in jobs table.
+> Listens for every id that come from amqp service and stores file details and content in jobs table.
 
 ### 3. Executer Service:
-> Every few seconds check the job table and send non executed jobs to CodeX API.
+> Every few seconds check the job table and send non-executed jobs to CodeX API.
